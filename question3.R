@@ -18,3 +18,8 @@ ggplot(data = df2) +
   geom_point() + geom_smooth(method=lm, se=FALSE) + 
   labs(title = "Redshift Compared to the Radius of the Galaxy", x = 'Redshift', y = 'Radius of Galaxy')
 
+# boxplot
+ggplot(data = df2) +
+  aes(x = redshift, y = petro_theta) + 
+  geom_boxplot() +
+  labs(title = "Redshift Compared to the Radius of the Galaxy", x = 'Redshift', y = 'Radius of Galaxy')
