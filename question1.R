@@ -28,8 +28,10 @@ df <- mutate(df, most_can_tell = voter_confidence >= 0.5)
 glimpse(df)
 head(df)
 
-sum(df$more_than_four_consensus)/length(df$iauname)
+param_stat <- sum(df$more_than_four_consensus)/length(df$iauname)
 
-sum(df$more_than_four_consensus & df$most_can_tell)/sum(df$most_can_tell)
+can_stat <- sum(df$more_than_four_consensus & df$most_can_tell)/sum(df$most_can_tell)
 
-sum(df$more_than_four_consensus & !df$most_can_tell)/sum(!df$most_can_tell)
+cant_stat <- sum(df$more_than_four_consensus & !df$most_can_tell)/sum(!df$most_can_tell)
+
+#we want to do a hypothesis test, null hyp is that can_stat = cant_stat, alt hyp is that can != cant_stat
