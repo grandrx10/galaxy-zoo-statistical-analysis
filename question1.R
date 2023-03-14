@@ -82,3 +82,30 @@ alpha <- 0.05
 p_val = 2 * sum(simulated_values >= test_stat) / repetitions
 print(paste(c('p value:', p_val)))
 print(ifelse(p_val < alpha, 'Reject the null', 'Fail to reject the null'))
+
+# linear regression model
+lm(more_than_four_consensus ~ most_can_tell, data=df) %>% summary()
+#notice how intercept is our cant_stat and most_can_tellTRUE is (can_stat - cant_stat)
+lm(more_than_four_consensus ~ !most_can_tell, data=df) %>% summary() #alternate way
+#notice how intercept is our can_stat and !most_can_tellTRUE is (cant_stat - can_stat)
+
+
+# Alternate graphs we might be interested in, with lm assessments
+
+#relation of % of confident_votes being more-than-4 and % of unconfident votes
+df %>% ggplot(aes(x = more_than_four_arm_votes/(total_votes-cant_tell_votes), y = voter_confidence)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE)
+lm(more_than_four_arm_votes/(total_votes-cant_tell_votes) ~ voter_confidence, data=df) %>% summary()
+#this should be the mirror of the previous plot: (notice how the lm voter_confidence coefficient is negative of the one in the above lm)
+df %>% ggplot(aes(x = four_or_less_arm_votes/(total_votes-cant_tell_votes), y = voter_confidence)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE)
+lm(four_or_less_arm_votes/(total_votes-cant_tell_votes) ~ voter_confidence, data=df) %>% summary()
+
+#relation of % of all_votes being more-than-4 and % of unconfident votes
+df %>% ggplot(aes(x = more_than_four_arm_votes/total_votes, y = voter_confidence)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE)
+lm(more_than_four_arm_votes/total_votes ~ voter_confidence, data=df) %>% summary()
+#this isn't necessarily a mirror of the previous plot...
+df %>% ggplot(aes(x = four_or_less_arm_votes/total_votes, y = voter_confidence)) + geom_point() +
+  geom_smooth(method=lm, se=FALSE)
+lm(four_or_less_arm_votes/total_votes ~ voter_confidence, data=df) %>% summary()
