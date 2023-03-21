@@ -21,7 +21,6 @@ df <- filter(df, total_votes != 0)
 df <- mutate(df, four_or_less_arm_votes = one_arm_votes + two_arm_votes + three_arm_votes + four_arm_votes)
 df <- df[, c(1, 9, 6, 7, 8)]
 
-df <- filter(df, more_than_four_arm_votes != four_or_less_arm_votes )
 df <- mutate(df, more_than_four_consensus = more_than_four_arm_votes > four_or_less_arm_votes)
 df <- mutate(df, voter_confidence = 1 - cant_tell_votes/total_votes)
 df <- mutate(df, most_can_tell = voter_confidence >= 0.5)
@@ -32,80 +31,42 @@ head(df)
 library(ggplot2)
 
 # visualization 1 (bar plot)
-dfsum1 <- df %>% group_by(most_can_tell, more_than_four_consensus) %>% tally()
+dfsum1 <- df %>% filter(more_than_four_arm_votes != four_or_less_arm_votes) %>%
+  group_by(most_can_tell, more_than_four_consensus) %>% tally()
 
-dfsum1 %>% ggplot(aes(x = most_can_tell, y = n, fill = more_than_four_consensus, colour = more_than_four_consensus)) + 
-  geom_bar(stat = "identity", position = 'dodge', alpha = 0.5) +
+dfsum1 %>% ggplot(aes(x = most_can_tell, y = n)) + geom_col(aes(fill = more_than_four_consensus), width = 0.8) +
   labs(x="Most people were confident voters", y="Number of Galaxies", fill="Most people voted more than 4") +
   guides(more_than_four_consensus = FALSE) + theme_bw()
 
-# visualization 2 (histogram)
-df %>% ggplot(aes(x = voter_confidence, fill=more_than_four_consensus)) + geom_histogram(position = "identity", alpha = 0.5, bins=10) +
-  labs(x="Voter confidence", y="Number of Galaxies", fill='Most people voted more than 4') + 
-  ylim(0, 31000) + theme_bw()
-
+#note we ignored these galaxies in our bar plot assessment
+sum(df$more_than_four_arm_votes == df$four_or_less_arm_votes)
+#note for later: probably should be a chi squared diagram instead of a bar plot/ histogram
+# also, we should do a chi-squared test instead of a t-test like the code is about to do...
 
 # hypothesis test
 param_stat <- sum(df$more_than_four_consensus)/length(df$iauname)
-
+param_stat
 can_stat <- sum(df$more_than_four_consensus & df$most_can_tell)/sum(df$most_can_tell)
-
+can_stat
 cant_stat <- sum(df$more_than_four_consensus & !df$most_can_tell)/sum(!df$most_can_tell)
+cant_stat
 
 # null hyp is that can_stat = cant_stat, 
 # alt hyp is that can_stat != cant_stat
 
-test_stat <- cant_stat
-repetitions <- 5000
-simulated_values <- rep(NA, repetitions)
-
-for(i in 1:repetitions){
-  # perform a random permutation and compute the simulated test statistic
-  simdata <- df %>%
-    mutate(more_than_four_consensus = sample(more_than_four_consensus, replace=FALSE))
-  
-  # re-compute the test statistic
-  sim_value <- sum(simdata$more_than_four_consensus & !simdata$most_can_tell)/sum(!simdata$most_can_tell)
-  
-  # store the simulated value
-  simulated_values[i] <- as.numeric(sim_value)
-}
-
-# convert vector results to a tibble
-sim <- tibble(median_diff = simulated_values)
-
-# plot the results
-sim %>% ggplot(aes(x=median_diff)) + geom_histogram()
-
-# Check p-value
-alpha <- 0.05
-p_val = 2 * sum(simulated_values >= test_stat) / repetitions
-print(paste(c('p value:', p_val)))
-print(ifelse(p_val < alpha, 'Reject the null', 'Fail to reject the null'))
-
-# linear regression model
-lm(more_than_four_consensus ~ most_can_tell, data=df) %>% summary()
-#notice how intercept is our cant_stat and most_can_tellTRUE is (can_stat - cant_stat)
-lm(more_than_four_consensus ~ !most_can_tell, data=df) %>% summary() #alternate way
-#notice how intercept is our can_stat and !most_can_tellTRUE is (cant_stat - can_stat)
+test_1 <- chisq.test(df$more_than_four_consensus, df$most_can_tell)
+test_1
 
 
-# Alternate graphs we might be interested in, with lm assessments
+# 2nd visualization
+# note how we're now including galaxies where the num of four-or-less == more-than-four
 
 #relation of % of confident_votes being more-than-4 and % of unconfident votes
 df %>% ggplot(aes(x = more_than_four_arm_votes/(total_votes-cant_tell_votes), y = voter_confidence)) + geom_point() +
   geom_smooth(method=lm, se=FALSE)
 lm(more_than_four_arm_votes/(total_votes-cant_tell_votes) ~ voter_confidence, data=df) %>% summary()
-#this should be the mirror of the previous plot: (notice how the lm voter_confidence coefficient is negative of the one in the above lm)
-df %>% ggplot(aes(x = four_or_less_arm_votes/(total_votes-cant_tell_votes), y = voter_confidence)) + geom_point() +
-  geom_smooth(method=lm, se=FALSE)
-lm(four_or_less_arm_votes/(total_votes-cant_tell_votes) ~ voter_confidence, data=df) %>% summary()
 
 #relation of % of all_votes being more-than-4 and % of unconfident votes
 df %>% ggplot(aes(x = more_than_four_arm_votes/total_votes, y = voter_confidence)) + geom_point() +
   geom_smooth(method=lm, se=FALSE)
 lm(more_than_four_arm_votes/total_votes ~ voter_confidence, data=df) %>% summary()
-#this isn't necessarily a mirror of the previous plot...
-df %>% ggplot(aes(x = four_or_less_arm_votes/total_votes, y = voter_confidence)) + geom_point() +
-  geom_smooth(method=lm, se=FALSE)
-lm(four_or_less_arm_votes/total_votes ~ voter_confidence, data=df) %>% summary()
