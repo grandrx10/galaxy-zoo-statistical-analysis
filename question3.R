@@ -23,3 +23,7 @@ ggplot(data = df2) +
   aes(x = redshift, y = petro_theta) + 
   geom_boxplot() +
   labs(title = "Redshift Compared to the Radius of the Galaxy", x = 'Redshift', y = 'Radius of Galaxy')
+
+
+# used to find p-value
+cor.test(df2$redshift, df2$petro_theta)
