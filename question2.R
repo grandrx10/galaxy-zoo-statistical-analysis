@@ -40,7 +40,6 @@ test_stat <- nsa_total %>% group_by(bulge) %>%
   summarise(medians = median(elpetro_absmag_r), .groups="drop") %>%
   summarise(value = diff(medians))
 test_stat <- as.numeric(test_stat)
-test_stat <- abs(test_stat)
 test_stat
 
 # code you answer here
@@ -58,7 +57,6 @@ for(i in 1:repetitions){
     summarise(value = diff(medians))
   
   # store the simulated value
-  sim_value <- abs(sim_value)
   simulated_values[i] <- as.numeric(sim_value)
 }
 
@@ -68,6 +66,6 @@ sim <- tibble(median_diff = simulated_values)
 # plot the results
 sim %>% ggplot(aes(x=median_diff)) + geom_histogram() + ggtitle("Difference in Median Brightness")
 
-p_1side <- sum(simulated_values >= test_stat) / N
+p_1side <- sum(simulated_values <= test_stat) / N
 p_1side
 
